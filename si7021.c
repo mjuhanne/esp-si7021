@@ -6,7 +6,10 @@
  *
  * Luca Dentella, www.lucadentella.it
  */
-
+#include "sdkconfig.h"
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define ESP32
+#endif
 
 // Component header file
 #include "si7021.h"
@@ -16,6 +19,14 @@ int si7021_init(i2c_port_t port, int sda_pin, int scl_pin,  gpio_pullup_t sda_in
 	esp_err_t ret;
 	_port = port;
 
+	// install the driver
+#ifdef ESP32
+	ret = i2c_driver_install(port, I2C_MODE_MASTER, 0, 0, 0);
+#else
+	ret = i2c_driver_install(port, I2C_MODE_MASTER);
+#endif
+	if(ret != ESP_OK) return SI7021_ERR_INSTALL;
+
 	// setup i2c controller
 	i2c_config_t conf;
 	conf.mode = I2C_MODE_MASTER;
@@ -23,13 +34,14 @@ int si7021_init(i2c_port_t port, int sda_pin, int scl_pin,  gpio_pullup_t sda_in
 	conf.scl_io_num = scl_pin;
 	conf.sda_pullup_en = sda_internal_pullup;
 	conf.scl_pullup_en = scl_internal_pullup;
+#ifdef ESP32
 	conf.master.clk_speed = 100000;
+#else
+	conf.clk_stretch_tick = 300;
+#endif
+
 	ret = i2c_param_config(port, &conf);
 	if( ret != ESP_OK ) return SI7021_ERR_CONFIG;
-
-	// install the driver
-	ret = i2c_driver_install(port, I2C_MODE_MASTER, 0, 0, 0);
-	if(ret != ESP_OK) return SI7021_ERR_INSTALL;
 
 	// verify if a sensor is present
 	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
