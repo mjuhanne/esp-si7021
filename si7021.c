@@ -36,6 +36,7 @@ int si7021_init(i2c_port_t port, int sda_pin, int scl_pin,  gpio_pullup_t sda_in
 	conf.scl_pullup_en = scl_internal_pullup;
 #ifdef ESP32
 	conf.master.clk_speed = 100000;
+	conf.clk_flags = 0;
 #else
 	conf.clk_stretch_tick = 300;
 #endif
